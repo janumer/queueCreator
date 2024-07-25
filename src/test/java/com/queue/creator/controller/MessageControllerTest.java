@@ -1,6 +1,7 @@
 package com.queue.creator.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.queue.creator.model.EmployeeBean;
 import com.queue.creator.model.MessageBean;
 import com.queue.creator.service.MessageSender;
 import org.junit.jupiter.api.Test;
@@ -32,12 +33,36 @@ public class MessageControllerTest {
 
         ObjectMapper objectMapper = new ObjectMapper();
         String messageBeanJson = objectMapper.writeValueAsString(messageBean);
+        String expectedResponse = "Sending message to Queue Name: " + messageBean.getQueueName() + " with Message: " + messageBean.getMessage();
 
         mockMvc.perform(post("/send")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(messageBeanJson))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Message sent to queue: testQueue"));
-        verify(messageSender).send("testQueue", "testMessage");
+                .andExpect(content().string(expectedResponse));
+        verify(messageSender).send(messageBean.getQueueName(), messageBean.getMessage());
     }
+
+    @Test
+    public void testRegistration() throws Exception {
+        String queueName = "testQueue";
+        EmployeeBean employeeBean = new EmployeeBean();
+        employeeBean.setEmpId(1);
+        employeeBean.setEmpName("Test");
+        employeeBean.setEmpAddress("LocalTest");
+        employeeBean.setEmpDoj("10-10-0000");
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String requestBody = objectMapper.writeValueAsString(employeeBean);
+        String expectedResponse = "Sending message to Queue Name: " + queueName + " with Message: " + employeeBean;
+
+        mockMvc.perform(post("/registration/{queueName}", queueName)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(content().string(expectedResponse));
+
+          verify(messageSender).send(queueName, employeeBean);
+    }
+
 }
