@@ -1,15 +1,18 @@
 package com.queue.creator.service;
 
-import jakarta.jms.JMSException;
-import jakarta.jms.Message;
-import jakarta.jms.TextMessage;
+import com.queue.creator.model.EmployeeBean;
+import com.queue.creator.xmlroot.Student;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.ObjectMessage;
+import javax.jms.TextMessage;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class CustomMessageListenerTest {
@@ -32,7 +35,36 @@ public class CustomMessageListenerTest {
     }
 
     @Test
-    public void testOnMessage_InvalidMessageType() throws Exception {
+    public void testOnMessage_ObjectMessage_Student() throws JMSException {
+        ObjectMessage mockObjectMessage = mock(ObjectMessage.class);
+        Student std = new Student();
+        std.setStdId(1);
+        std.setStdName("Test");
+        std.setStdAddr("Local");
+
+        when(mockObjectMessage.getObject()).thenReturn(std);
+        customListener.onMessage(mockObjectMessage);
+        verify(mockObjectMessage).getObject();
+        assertEquals(std, mockObjectMessage.getObject());
+    }
+
+    @Test
+    public void testOnMessage_ObjectMessage_Employee() throws JMSException {
+        ObjectMessage mockObjectMessage = mock(ObjectMessage.class);
+        EmployeeBean emp = new EmployeeBean();
+        emp.setEmpId(1);
+        emp.setEmpName("Test");
+        emp.setEmpAddress("Local");
+        emp.setEmpDoj("10-10-1000");
+
+        when(mockObjectMessage.getObject()).thenReturn(emp);
+        customListener.onMessage(mockObjectMessage);
+        verify(mockObjectMessage).getObject();
+        assertEquals(emp, mockObjectMessage.getObject());
+    }
+
+    @Test
+    public void testOnMessage_UnsupportedMessageType() throws Exception {
         Message message = mock(Message.class);
         customListener.onMessage(message);
     }
@@ -40,7 +72,7 @@ public class CustomMessageListenerTest {
     @Test
     public void testOnMessage_JMSException() throws Exception {
         TextMessage textMessage = mock(TextMessage.class);
-        when(textMessage.getText()).thenThrow(new JMSException("JMS Test exception"));
+        when(textMessage.getText()).thenThrow(new JMSException("Testing JMSException"));
         customListener.onMessage(textMessage);
         verify(textMessage).getText();
     }
@@ -55,10 +87,10 @@ public class CustomMessageListenerTest {
     }
 
     @Test
-    public void testOnMessage_ExceptionInProcessing() throws Exception {
+    public void testOnMessage_RuntimeException() throws Exception {
         TextMessage textMessage = mock(TextMessage.class);
-        when(textMessage.getText()).thenThrow(new RuntimeException("Test exception"));
-
-        assertDoesNotThrow(() -> customListener.onMessage(textMessage));
+        when(textMessage.getText()).thenThrow(new RuntimeException("Testing Runtime Exception"));
+        customListener.onMessage(textMessage);
+        verify(textMessage).getText();
     }
 }

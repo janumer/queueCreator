@@ -1,15 +1,15 @@
 package com.queue.creator.config;
 
-import jakarta.jms.MessageListener;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
-import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
-import org.springframework.jms.support.converter.MessageConverter;
-import org.springframework.jms.support.converter.MessageType;
+import org.springframework.jms.support.converter.MarshallingMessageConverter;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+
+import javax.jms.MessageListener;
 
 @Configuration
 @EnableJms
@@ -20,18 +20,27 @@ public class JmsConfig {
         factory.setBrokerURL("tcp://localhost:61616");
         factory.setUserName("admin");
         factory.setPassword("admin");
+        factory.setTrustAllPackages(true);
         return factory;
     }
+
     @Bean
-    public MessageConverter jacksonJmsMessageConverter() {
-        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
-        converter.setTargetType(MessageType.TEXT);
-        converter.setTypeIdPropertyName("_type");
-        return converter;
+    public Jaxb2Marshaller jaxb2Marshaller() {
+        Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
+        marshaller.setPackagesToScan("com.queue.creator.xmlroot");
+        return marshaller;
     }
+
     @Bean
-    public JmsTemplate jmsTemplate(ActiveMQConnectionFactory connectionFactory){
-        return  new JmsTemplate(connectionFactory);
+    public MarshallingMessageConverter marshallingMessageConverter(Jaxb2Marshaller marshaller) {
+        return new MarshallingMessageConverter(marshaller);
+    }
+
+    @Bean
+    public JmsTemplate jmsTemplate(ActiveMQConnectionFactory connectionFactory, MarshallingMessageConverter messageConverter) {
+        JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory);
+        jmsTemplate.setMessageConverter(messageConverter);
+        return jmsTemplate;
     }
 
     @Bean

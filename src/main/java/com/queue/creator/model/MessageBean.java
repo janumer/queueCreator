@@ -1,8 +1,10 @@
 package com.queue.creator.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class MessageBean {
     private String queueName;
     private String message;
